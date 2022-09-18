@@ -7,6 +7,5 @@ A faster [GMFSS](https://github.com/YiWeiHuang-stack/GMFSS)
 ```
 python3 inference_video.py --img=demo/ --scale=1.0 --multi=2
 ```
-
 ## Reference
-[GMFSS](https://github.com/YiWeiHuang-stack/GMFSS)   [BSRN](https://github.com/xiaom233/BSRN)
+[GMFSS](https://github.com/YiWeiHuang-stack/GMFSS) [BSRN](https://github.com/xiaom233/BSRN)
