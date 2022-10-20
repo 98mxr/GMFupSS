@@ -165,12 +165,12 @@ def build_read_buffer(user_args, read_buffer, videogen):
         pass
     read_buffer.put(None)
 
-def make_inference(I0, I1, flow01, flow10, metric0, metric1, n):    
+def make_inference(I0, I1, reuse_things, n):    
     global model
     if model.version >= 3.9:
         res = []
         for i in range(n):
-            res.append(model.inference(I0, I1, flow01, flow10, metric0, metric1, (i+1) * 1. / (n+1)))
+            res.append(model.inference(I0, I1, reuse_things, (i+1) * 1. / (n+1)))
         return res
     else:
         middle = model.inference(I0, I1, args.scale)
@@ -220,8 +220,8 @@ while True:
     I1 = torch.from_numpy(np.transpose(frame, (2,0,1))).to(device, non_blocking=True).unsqueeze(0).float() / 255.
     I1 = F.interpolate(I1, (ph, pw), mode='bilinear', align_corners=False)
     
-    flow01, flow10, metric0, metric1 = model.reuse(I0, I1, args.scale)
-    output = make_inference(I0, I1, flow01, flow10, metric0, metric1, args.multi-1)
+    reuse_things = model.reuse(I0, I1, args.scale)
+    output = make_inference(I0, I1, reuse_things, args.multi-1)
 
     if args.montage:
         write_buffer.put(np.concatenate((lastframe, lastframe), 1))
