@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from model.softsplat import softsplat as warp
 
 
@@ -53,7 +54,6 @@ class PixelShuffleBlcok(nn.Module):
         x = self.conv_last(self.upsample(x))
         return x
 
-
 # grid network
 class GridNet(nn.Module):
     def __init__(self, in_channels, in_channels1, in_channels2, in_channels3, out_channels):
@@ -70,6 +70,7 @@ class GridNet(nn.Module):
         self.residual_model_04=ResidualBlock(32, 32, stride=1)
         self.residual_model_05=ResidualBlock(32, 32, stride=1)
         self.residual_model_tail=PixelShuffleBlcok(32, 32, out_channels)
+
 
         self.residual_model_11=ResidualBlock(64, 64, stride=1)
         #self.residual_model_12=ResidualBlock(64, 64, stride=1)
@@ -195,19 +196,20 @@ class AnimeInterp(nn.Module):
 
         return tmp
 
-    def forward(self, imgs, I1, I2, F1t, F2t, Z1, Z2):
-        feat11, feat12, feat13 = self.feat_ext(imgs[:, :3])
-        feat21, feat22, feat23 = self.feat_ext(imgs[:, 3:6])
+    def forward(self, I1, I2, reuse_things, t):
+        F12, Z1, feat11, feat12, feat13 = reuse_things[0], reuse_things[2], reuse_things[4][0], reuse_things[4][1], reuse_things[4][2]
+        F21, Z2, feat21, feat22, feat23 = reuse_things[1], reuse_things[3], reuse_things[5][0], reuse_things[5][1], reuse_things[5][2]
 
+        F1t = t * F12
+        F2t = (1-t) * F21
+
+        I1 = F.interpolate(I1, scale_factor = 0.5, mode="bilinear", align_corners=False)
         I1t = warp(I1, F1t, Z1, strMode='soft')
+        I2 = F.interpolate(I2, scale_factor = 0.5, mode="bilinear", align_corners=False)
         I2t = warp(I2, F2t, Z2, strMode='soft')
 
-        F1td = self.dflow(F1t, feat11)
-        F2td = self.dflow(F2t, feat21)
-        Z1d = self.dmetric(Z1, feat11)
-        Z2d = self.dmetric(Z2, feat21)
-        feat1t1 = warp(feat11, F1td, Z1d, strMode='soft')
-        feat2t1 = warp(feat21, F2td, Z2d, strMode='soft')
+        feat1t1 = warp(feat11, F1t, Z1, strMode='soft')
+        feat2t1 = warp(feat21, F2t, Z2, strMode='soft')
 
         F1tdd = self.dflow(F1t, feat12)
         F2tdd = self.dflow(F2t, feat22)
