@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+
 from model.gmflow.gmflow import GMFlow
 from model.MetricNet import MetricNet
 from model.FusionNet import AnimeInterp
@@ -40,13 +41,18 @@ class Model:
             self.metricnet.load_state_dict(convert(torch.load('{}/metric.pkl'.format(path))))
             self.fusionnet.load_state_dict(convert(torch.load('{}/fusionnet.pkl'.format(path))))
 
-    def reuse(self, img0, img1, scale=1.0):
-        imgs = torch.cat((img0, img1), 1)
+    def reuse(self, img0, img1, scale):
+        feat11, feat12, feat13 = self.fusionnet.feat_ext(img0)
+        feat21, feat22, feat23 = self.fusionnet.feat_ext(img1)
+        feat_ext0 = [feat11, feat12, feat13]
+        feat_ext1 = [feat21, feat22, feat23]
+
         img0 = F.interpolate(img0, scale_factor = 0.5, mode="bilinear", align_corners=False)
         img1 = F.interpolate(img1, scale_factor = 0.5, mode="bilinear", align_corners=False)
+
         if scale != 1.0:
-            imgf0 = F.interpolate(imgs[:, :3], scale_factor = scale * 0.5, mode="bilinear", align_corners=False)
-            imgf1 = F.interpolate(imgs[:, 3:6], scale_factor = scale * 0.5, mode="bilinear", align_corners=False)
+            imgf0 = F.interpolate(img0, scale_factor = scale, mode="bilinear", align_corners=False)
+            imgf1 = F.interpolate(img1, scale_factor = scale, mode="bilinear", align_corners=False)
         else:
             imgf0 = img0
             imgf1 = img1
@@ -55,14 +61,11 @@ class Model:
         if scale != 1.0:
             flow01 = F.interpolate(flow01, scale_factor = 1. / scale, mode="bilinear", align_corners=False) / scale
             flow10 = F.interpolate(flow10, scale_factor = 1. / scale, mode="bilinear", align_corners=False) / scale
-        metric0, metric1 = self.metricnet(img0, img1, flow01, flow10)
-        return flow01, flow10, metric0, metric1
 
-    def inference(self, img0, img1, flow01, flow10, metric0, metric1, timestep=0.5):
-        imgs = torch.cat((img0, img1), 1)
-        img0 = F.interpolate(img0, scale_factor = 0.5, mode="bilinear", align_corners=False)
-        img1 = F.interpolate(img1, scale_factor = 0.5, mode="bilinear", align_corners=False)
-        F0t = timestep * flow01
-        F1t = (1 - timestep) * flow10
-        out = self.fusionnet(imgs, img0, img1, F0t, F1t, metric0, metric1)
+        metric0, metric1 = self.metricnet(img0, img1, flow01, flow10)
+
+        return flow01, flow10, metric0, metric1, feat_ext0, feat_ext1
+
+    def inference(self, img0, img1, reuse_things, timestep):
+        out = self.fusionnet(img0, img1, reuse_things, timestep)
         return out
