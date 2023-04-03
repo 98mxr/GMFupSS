@@ -4,7 +4,7 @@ A faster [GMFSS](https://github.com/YiWeiHuang-stack/GMFSS)
 
 ---
 
-**2023-04-03: We now provide [GMFSS_Fortuna](https://github.com/98mxr/GMFSS_Fortuna) as a factual basis for training in GMFSS. Please use this.**
+**2023-04-03: We now provide [GMFSS_Fortuna](https://github.com/98mxr/GMFSS_Fortuna) as a factual basis for training in GMFSS. Please use it. This item will not be updated!**
 
 **2022-11-23: We now provide GMFSS_union as the next generation of GMFSS with better performance. Welcome to try.**
 
